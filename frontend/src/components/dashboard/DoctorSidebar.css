@@ -1,0 +1,223 @@
+
+/* ==================================
+   AAROGYA LINK - DOCTOR SIDEBAR
+================================== */
+
+.doctor-sidebar {
+  width: 265px;
+  min-width: 265px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 17px;
+  background: #ffffff;
+  border-right: 1px solid #e5eee9;
+  box-shadow: 3px 0 15px rgba(20, 75, 55, 0.04);
+  overflow-y: auto;
+  font-family: inherit;
+  z-index: 10;
+}
+
+/* Logo */
+
+.doctor-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 10px 25px;
+  border-bottom: 1px solid #edf2ef;
+}
+
+.doctor-logo-icon {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #12b981, #087b50);
+  border-radius: 14px;
+  color: white;
+  font-size: 27px;
+}
+
+.doctor-sidebar-logo h2 {
+  margin: 0;
+  color: #123e32;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.doctor-sidebar-logo span {
+  color: #07885b;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+/* Doctor Profile */
+
+.doctor-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 19px 10px;
+  margin: 15px 0;
+  background: #f1faf5;
+  border: 1px solid #e3f1e8;
+  border-radius: 12px;
+}
+
+.doctor-avatar {
+  width: 43px;
+  height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #087e55;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.doctor-sidebar-profile h3 {
+  margin: 0 0 5px;
+  color: #20483b;
+  font-size: 13px;
+}
+
+.doctor-sidebar-profile p {
+  margin: 0;
+  color: #81948a;
+  font-size: 11px;
+}
+
+/* Menu */
+
+.sidebar-section-title {
+  padding: 0 12px;
+  margin: 12px 0;
+  color: #9aa9a1;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.doctor-sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doctor-menu-item {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 13px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64766e;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doctor-menu-item:hover {
+  background: #eff9f3;
+  color: #07865b;
+}
+
+.doctor-menu-item.active {
+  background: linear-gradient(90deg, #087e55, #10a66e);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(8, 126, 85, 0.18);
+}
+
+.doctor-menu-icon {
+  width: 23px;
+  text-align: center;
+  font-size: 19px;
+}
+
+/* Help Box */
+
+.doctor-sidebar-help {
+  margin-top: auto;
+  padding: 17px 14px;
+  background: #f0f8f4;
+  border: 1px solid #e1eee5;
+  border-radius: 13px;
+}
+
+.help-icon {
+  width: 27px;
+  height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #087e55;
+  color: white;
+  font-weight: 800;
+}
+
+.doctor-sidebar-help h4 {
+  margin: 12px 0 6px;
+  color: #214a3b;
+  font-size: 13px;
+}
+
+.doctor-sidebar-help p {
+  margin: 0 0 12px;
+  color: #7d8d84;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.doctor-sidebar-help button {
+  width: 100%;
+  padding: 9px;
+  background: #087e55;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Footer */
+
+.doctor-sidebar-footer {
+  padding: 20px 5px 0;
+  text-align: center;
+}
+
+.doctor-sidebar-footer p {
+  margin: 0 0 5px;
+  color: #667b70;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.doctor-sidebar-footer span {
+  color: #a0ada5;
+  font-size: 10px;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .doctor-sidebar {
+    width: 230px;
+    min-width: 230px;
+  }
+}

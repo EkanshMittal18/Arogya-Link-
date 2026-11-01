@@ -6,12 +6,25 @@
 
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect} from "react";
 
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase/firebase";
+import { Navigate, useLocation } from "react-router-dom";
+
+import PatientDashboard from "./components/dashboard/PatientDashboard";
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+} from "react-router-dom";
 
 import Login from "./components/auth/login";
-import Signup from "./components/auth/Signup";
+import Signup from "./components/auth/signup";
+import HealthWorkerDashboard from "./components/dashboard/HealthWorkerDashboard";
 
 import HealthcareGap from "./components/sections/HealthcareGap";
 
@@ -21,6 +34,7 @@ import HowItWorks from "./components/sections/HowItWorks";
 import DesignedForEveryone from "./components/sections/DesignedForEveryone";
 import TrustAccessibility from "./components/sections/TrustAccessibility";
 import Footer from "./components/sections/Footer";
+import DoctorDashboard from "./components/dashboard/DoctorDashboard";
 
 import {
 
@@ -634,6 +648,8 @@ function HomePage() {
 <Footer />
     </main>
 
+
+
   );
 
 }
@@ -645,19 +661,115 @@ function HomePage() {
 // ============================================================
 
 // MAIN APP ROUTING
+// ============================================================
+// PROTECTED ROUTE — ROLE BASED DASHBOARD ACCESS
+// ============================================================
+
+function ProtectedRoute({ children, allowedRole }) {
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          setProfile(userSnap.data());
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error("Profile verification error:", error);
+        setProfile(null);
+      }
+
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <p>Loading dashboard...</p>;
+  }
+
+  if (!profile || profile.status !== "active") {
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (profile.role !== allowedRole) {
+    const routes = {
+      patient: "/patient-preview",
+      doctor: "/doctor",
+      health_worker: "/health-worker-dashboard",
+    };
+
+    return (
+      <Navigate
+        to={routes[profile.role] || "/login"}
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+<Route path="/" element={<HomePage />} />
 
-        {/* Main Website */}
-        <Route path="/" element={<HomePage />} />
+<Route path="/login" element={<Login />} />
 
-        {/* Authentication Pages */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+<Route path="/signup" element={<Signup />} />
 
+{/* PATIENT DASHBOARD */}
+<Route
+  path="/patient-preview"
+  element={
+    <ProtectedRoute allowedRole="patient">
+      <PatientDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+{/* DOCTOR DASHBOARD */}
+<Route
+  path="/doctor"
+  element={
+    <ProtectedRoute allowedRole="doctor">
+      <DoctorDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+{/* HEALTH WORKER DASHBOARD */}
+<Route
+  path="/health-worker-dashboard"
+  element={
+    <ProtectedRoute allowedRole="health_worker">
+      <HealthWorkerDashboard />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );
