@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
+import DashboardSwitcher from "../common/DashboardSwitcher";
+import { useAarogya } from "../../context/AarogyaContext";
 
 import {
   LayoutDashboard,
@@ -41,9 +43,18 @@ import HealthWorkerSupport from "./HealthWorkerSupport";
 
 function HealthWorkerDashboard() {
   const navigate = useNavigate();
+  const { patients, referrals, followups, homeVisits, notifications } = useAarogya();
 
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const pendingReferralsCount = referrals.filter(
+    (r) => r.status === "Pending" || r.status === "In Progress"
+  ).length;
+
+  const dueFollowupsCount = followups.filter((f) => f.status !== "Completed").length;
+  const activeVisitsCount = homeVisits.filter((v) => v.status === "Scheduled").length;
+  const unreadNotifsCount = notifications.filter((n) => n.role === "health_worker" && !n.read).length;
 
   // Sidebar Menu
   const menuItems = [
@@ -97,81 +108,44 @@ function HealthWorkerDashboard() {
   const stats = [
     {
       title: "Total Registered Patients",
-      value: "248",
-      change: "+12.5%",
-      description: "Compared to last month",
+      value: String(patients.length),
+      change: `${patients.length} live records`,
+      description: "Community health register",
       icon: Users,
       color: "blue",
+      menu: "My Patients",
     },
     {
-      title: "Today's Home Visits",
-      value: "18",
-      change: "+4 today",
-      description: "Scheduled home visits",
+      title: "Scheduled Home Visits",
+      value: String(activeVisitsCount).padStart(2, "0"),
+      change: `${activeVisitsCount} scheduled`,
+      description: "Scheduled rural visits",
       icon: MapPin,
       color: "green",
+      menu: "Home Visits",
     },
     {
-      title: "Pending Referrals",
-      value: "12",
-      change: "Needs attention",
-      description: "Awaiting doctor review",
+      title: "Active Referrals",
+      value: String(pendingReferralsCount).padStart(2, "0"),
+      change: pendingReferralsCount > 0 ? "Under doctor review" : "All reviewed",
+      description: "Referred to doctors",
       icon: FileText,
       color: "orange",
+      menu: "Referrals",
     },
     {
       title: "Follow-ups Due",
-      value: "09",
-      change: "Today",
+      value: String(dueFollowupsCount).padStart(2, "0"),
+      change: "Active care plan",
       description: "Patients requiring follow-up",
       icon: Clock,
       color: "purple",
+      menu: "Follow-ups",
     },
   ];
 
   // Recent Patient Records
-  const recentPatients = [
-    {
-      id: "AL001",
-      name: "Ramesh Kumar",
-      age: 45,
-      gender: "Male",
-      village: "Rampur",
-      condition: "Fever",
-      status: "Follow-up Required",
-      statusType: "warning",
-    },
-    {
-      id: "AL002",
-      name: "Sunita Devi",
-      age: 32,
-      gender: "Female",
-      village: "Shivpur",
-      condition: "General Checkup",
-      status: "Completed",
-      statusType: "success",
-    },
-    {
-      id: "AL003",
-      name: "Mohan Singh",
-      age: 58,
-      gender: "Male",
-      village: "Lakshmipur",
-      condition: "High BP",
-      status: "Doctor Referral",
-      statusType: "danger",
-    },
-    {
-      id: "AL004",
-      name: "Pooja Sharma",
-      age: 26,
-      gender: "Female",
-      village: "Rampur",
-      condition: "Pregnancy Checkup",
-      status: "In Progress",
-      statusType: "info",
-    },
-  ];
+  const recentPatients = patients.slice(0, 5);
 
   // Today's Tasks
   const todayTasks = [
@@ -534,7 +508,9 @@ if (activeMenu === "Help & Support") {
   };
 
   return (
-    <div className="hw-dashboard">
+    <div className="flex flex-col min-h-screen">
+      <DashboardSwitcher currentRole="health_worker" />
+      <div className="hw-dashboard flex-1">
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -713,6 +689,7 @@ if (activeMenu === "Help & Support") {
           </span>
         </footer>
       </main>
+    </div>
     </div>
   );
 }

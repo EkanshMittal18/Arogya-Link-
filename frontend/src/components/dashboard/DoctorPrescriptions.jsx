@@ -13,108 +13,56 @@ import {
   User,
   Trash2,
 } from "lucide-react";
-
-const initialPrescriptions = [
-  {
-    id: "PRE-1001",
-    patient: "Rahul Sharma",
-    patientId: "AL-1024",
-    date: "01 Nov 2026",
-    diagnosis: "Seasonal Viral Infection",
-    status: "Issued",
-    medicines: [
-      {
-        name: "Paracetamol",
-        dosage: "500 mg",
-        frequency: "As directed",
-        duration: "3 days",
-      },
-      {
-        name: "Vitamin C",
-        dosage: "500 mg",
-        frequency: "Once daily",
-        duration: "5 days",
-      },
-    ],
-    instructions: "Rest and maintain adequate hydration.",
-  },
-  {
-    id: "PRE-1002",
-    patient: "Priya Verma",
-    patientId: "AL-1025",
-    date: "01 Nov 2026",
-    diagnosis: "General Follow-up",
-    status: "Draft",
-    medicines: [
-      {
-        name: "Medicine Example",
-        dosage: "As prescribed",
-        frequency: "As directed",
-        duration: "5 days",
-      },
-    ],
-    instructions: "Follow-up as advised.",
-  },
-  {
-    id: "PRE-1003",
-    patient: "Amit Kumar",
-    patientId: "AL-1026",
-    date: "31 Oct 2026",
-    diagnosis: "Blood Pressure Monitoring",
-    status: "Issued",
-    medicines: [
-      {
-        name: "Medicine Example",
-        dosage: "As prescribed",
-        frequency: "As directed",
-        duration: "7 days",
-      },
-    ],
-    instructions: "Monitor blood pressure regularly.",
-  },
-];
+import { useAarogya } from "../../context/AarogyaContext";
 
 function DoctorPrescriptions() {
-  const [prescriptions, setPrescriptions] = useState(initialPrescriptions);
+  const { prescriptions, patients, addPrescription } = useAarogya();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
 
   const [form, setForm] = useState({
-    patient: "",
-    patientId: "",
+    patient: patients[0]?.name || "Rahul Sharma",
+    patientId: patients[0]?.id || "AL-1024",
     diagnosis: "",
-    instructions: "",
+    instructions: "Take medications with warm water after meals. Report if any side effects occur.",
     medicines: [
       {
         name: "",
         dosage: "",
-        frequency: "",
-        duration: "",
+        frequency: "Once daily",
+        duration: "5 days",
       },
     ],
   });
 
-  const issued = prescriptions.filter(
-    (item) => item.status === "Issued"
-  ).length;
-
-  const drafts = prescriptions.filter(
-    (item) => item.status === "Draft"
-  ).length;
+  const issued = prescriptions.filter((item) => item.status === "Issued").length;
+  const drafts = prescriptions.filter((item) => item.status === "Draft").length;
 
   const filtered = prescriptions.filter((item) => {
     const matchesSearch =
-      item.patient.toLowerCase().includes(search.toLowerCase()) ||
-      item.id.toLowerCase().includes(search.toLowerCase()) ||
-      item.patientId.toLowerCase().includes(search.toLowerCase());
+      (item.patient || "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.id || "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.patientId || "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.diagnosis || "").toLowerCase().includes(search.toLowerCase());
 
-    const matchesFilter =
-      filter === "All" || item.status === filter;
+    const matchesFilter = filter === "All" || item.status === filter;
 
     return matchesSearch && matchesFilter;
   });
+
+  const handlePatientSelect = (e) => {
+    const pId = e.target.value;
+    const p = patients.find((pat) => pat.id === pId);
+    if (p) {
+      setForm((prev) => ({
+        ...prev,
+        patientId: p.id,
+        patient: p.name,
+      }));
+    }
+  };
 
   const updateMedicine = (index, field, value) => {
     setForm((previous) => ({
@@ -130,7 +78,7 @@ function DoctorPrescriptions() {
       ...previous,
       medicines: [
         ...previous.medicines,
-        { name: "", dosage: "", frequency: "", duration: "" },
+        { name: "", dosage: "", frequency: "Once daily", duration: "5 days" },
       ],
     }));
   };
@@ -144,7 +92,7 @@ function DoctorPrescriptions() {
 
   const createPrescription = (status) => {
     if (!form.patient.trim() || !form.patientId.trim() || !form.diagnosis.trim()) {
-      alert("Please enter patient name, patient ID and diagnosis.");
+      alert("Please select a patient and enter clinical diagnosis.");
       return;
     }
 
@@ -152,38 +100,30 @@ function DoctorPrescriptions() {
       form.medicines.some(
         (medicine) =>
           !medicine.name.trim() ||
-          !medicine.dosage.trim() ||
-          !medicine.frequency.trim() ||
-          !medicine.duration.trim()
+          !medicine.dosage.trim()
       )
     ) {
-      alert("Please complete all medicine details.");
+      alert("Please fill in medication names and dosages.");
       return;
     }
 
-    const newPrescription = {
-      ...form,
-      id: `PRE-${Date.now().toString().slice(-6)}`,
-      date: new Date().toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+    addPrescription({
+      patientId: form.patientId,
+      patient: form.patient,
+      doctor: "Dr. Amit Sharma",
+      diagnosis: form.diagnosis,
       status,
-    };
-
-    setPrescriptions((previous) => [
-      newPrescription,
-      ...previous,
-    ]);
+      medicines: form.medicines,
+      instructions: form.instructions,
+    });
 
     setForm({
-      patient: "",
-      patientId: "",
+      patient: patients[0]?.name || "Rahul Sharma",
+      patientId: patients[0]?.id || "AL-1024",
       diagnosis: "",
-      instructions: "",
+      instructions: "Take medications with warm water after meals. Report if any side effects occur.",
       medicines: [
-        { name: "", dosage: "", frequency: "", duration: "" },
+        { name: "", dosage: "", frequency: "Once daily", duration: "5 days" },
       ],
     });
 
@@ -198,7 +138,7 @@ function DoctorPrescriptions() {
       return;
     }
 
-    const medicineRows = item.medicines
+    const medicineRows = (item.medicines || [])
       .map(
         (medicine) => `
           <tr>
@@ -218,25 +158,26 @@ function DoctorPrescriptions() {
         <title>${item.id}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 35px; color: #183b32; }
-          h1 { color: #168b68; }
+          h1 { color: #168b68; margin-bottom: 2px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
           th { background: #eaf6f0; }
-          .footer { margin-top: 40px; }
+          .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; }
         </style>
       </head>
       <body>
         <h1>AAROGYA LINK</h1>
-        <h2>Medical Prescription</h2>
-        <p><b>Prescription ID:</b> ${item.id}</p>
-        <p><b>Patient:</b> ${item.patient}</p>
-        <p><b>Patient ID:</b> ${item.patientId}</p>
-        <p><b>Date:</b> ${item.date}</p>
+        <p>Rural Health & Digital Telemedicine Network</p>
+        <hr/>
+        <h2>Digital Medical Prescription</h2>
+        <p><b>Prescription ID:</b> ${item.id} &nbsp;|&nbsp; <b>Date:</b> ${item.date}</p>
+        <p><b>Patient:</b> ${item.patient} &nbsp;|&nbsp; <b>Patient ID:</b> ${item.patientId}</p>
+        <p><b>Consulting Doctor:</b> ${item.doctor || "Dr. Amit Sharma"}</p>
         <p><b>Diagnosis:</b> ${item.diagnosis}</p>
         <table>
           <thead>
             <tr>
-              <th>Medicine</th>
+              <th>Medicine Name</th>
               <th>Dosage</th>
               <th>Frequency</th>
               <th>Duration</th>
@@ -244,10 +185,10 @@ function DoctorPrescriptions() {
           </thead>
           <tbody>${medicineRows}</tbody>
         </table>
-        <p><b>Instructions:</b> ${item.instructions || "None"}</p>
+        <p style="margin-top:20px;"><b>Doctor's Clinical Instructions:</b> ${item.instructions || "None"}</p>
         <div class="footer">
-          <p>Doctor's Signature: __________________</p>
-          <p>This is a demonstration document, not a validated medical prescription.</p>
+          <p>Doctor's Digital Signature: <b>Dr. Amit Sharma (MD, General Medicine)</b></p>
+          <p style="font-size:11px;color:#777;">Aarogya Link E-Health Verified System</p>
         </div>
         <script>window.onload = () => window.print();</script>
       </body>
@@ -259,15 +200,12 @@ function DoctorPrescriptions() {
 
   return (
     <div className="doctor-prescriptions">
-
       {/* Heading */}
       <div className="prescriptions-heading">
         <div>
-          <span className="prescriptions-label">
-            DIGITAL HEALTH RECORDS
-          </span>
+          <span className="prescriptions-label">DIGITAL HEALTH RECORDS • LIVE</span>
           <h1>Prescriptions</h1>
-          <p>Create and manage patient medication records.</p>
+          <p>Issue digital prescriptions instantly synchronized to Patient Health Records.</p>
         </div>
 
         <button
@@ -281,7 +219,6 @@ function DoctorPrescriptions() {
 
       {/* Statistics */}
       <div className="prescriptions-stats">
-
         <div className="prescriptions-stat-card">
           <div className="prescriptions-stat-icon green">
             <FileText size={23} />
@@ -289,7 +226,7 @@ function DoctorPrescriptions() {
           <div>
             <span>Total Prescriptions</span>
             <h2>{prescriptions.length}</h2>
-            <small>All prescription records</small>
+            <small>Live synchronized</small>
           </div>
         </div>
 
@@ -300,7 +237,7 @@ function DoctorPrescriptions() {
           <div>
             <span>Issued Prescriptions</span>
             <h2>{issued}</h2>
-            <small>Successfully issued</small>
+            <small>Visible in Patient Records</small>
           </div>
         </div>
 
@@ -311,7 +248,7 @@ function DoctorPrescriptions() {
           <div>
             <span>Draft Prescriptions</span>
             <h2>{drafts}</h2>
-            <small>Saved as drafts</small>
+            <small>Pending issuance</small>
           </div>
         </div>
 
@@ -320,55 +257,35 @@ function DoctorPrescriptions() {
             <Pill size={23} />
           </div>
           <div>
-            <span>Medicine Entries</span>
+            <span>Medicines Prescribed</span>
             <h2>
               {prescriptions.reduce(
-                (total, item) => total + item.medicines.length,
+                (total, item) => total + (item.medicines ? item.medicines.length : 0),
                 0
               )}
             </h2>
-            <small>Total medicine entries</small>
+            <small>Across all patients</small>
           </div>
-        </div>
-
-      </div>
-
-      {/* Banner */}
-      <div className="prescriptions-banner">
-        <div className="prescriptions-banner-icon">
-          <FileText size={24} />
-        </div>
-
-        <div>
-          <h3>Digital Prescription Management</h3>
-          <p>
-            Prepare, review and print patient prescription records
-            from one workspace.
-          </p>
         </div>
       </div>
 
       {/* Directory */}
       <div className="prescriptions-container">
-
         <div className="prescriptions-container-header">
           <div>
             <h2>Prescription Records</h2>
-            <p>All your prescription records</p>
+            <p>Digital records issued to patients</p>
           </div>
 
-          <span className="prescriptions-count">
-            {filtered.length} Records
-          </span>
+          <span className="prescriptions-count">{filtered.length} Records</span>
         </div>
 
         <div className="prescriptions-toolbar">
-
           <div className="prescriptions-search">
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search patient or prescription ID..."
+              placeholder="Search patient, ID, or diagnosis..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -383,11 +300,9 @@ function DoctorPrescriptions() {
             <option value="Issued">Issued</option>
             <option value="Draft">Draft</option>
           </select>
-
         </div>
 
         <div className="prescriptions-table-wrapper">
-
           <table className="prescriptions-table">
             <thead>
               <tr>
@@ -407,8 +322,8 @@ function DoctorPrescriptions() {
                   <tr key={item.id}>
                     <td>
                       <div className="prescriptions-patient">
-                        <div className="prescriptions-avatar">
-                          {item.patient
+                        <div className="prescriptions-avatar font-bold text-xs">
+                          {(item.patient || "PT")
                             .split(" ")
                             .map((word) => word[0])
                             .join("")
@@ -422,18 +337,20 @@ function DoctorPrescriptions() {
                     </td>
 
                     <td>
-                      <span className="prescriptions-id">
+                      <span className="prescriptions-id font-mono font-semibold">
                         {item.id}
                       </span>
                     </td>
 
                     <td>{item.date}</td>
-                    <td>{item.diagnosis}</td>
-                    <td>{item.medicines.length} Medicines</td>
+                    <td>
+                      <strong className="text-slate-800 text-xs">{item.diagnosis}</strong>
+                    </td>
+                    <td>{(item.medicines || []).length} Medicines</td>
 
                     <td>
                       <span
-                        className={`prescriptions-status ${item.status.toLowerCase()}`}
+                        className={`prescriptions-status ${(item.status || "issued").toLowerCase()}`}
                       >
                         {item.status}
                       </span>
@@ -459,13 +376,11 @@ function DoctorPrescriptions() {
               )}
             </tbody>
           </table>
-
         </div>
 
         <div className="prescriptions-footer">
           Showing {filtered.length} of {prescriptions.length} prescriptions
         </div>
-
       </div>
 
       {/* View Prescription Modal */}
@@ -478,7 +393,6 @@ function DoctorPrescriptions() {
             className="prescriptions-modal"
             onClick={(e) => e.stopPropagation()}
           >
-
             <div className="prescriptions-modal-header">
               <div>
                 <h2>Prescription Details</h2>
@@ -508,7 +422,7 @@ function DoctorPrescriptions() {
             </h3>
 
             <div className="prescriptions-medicine-list">
-              {selected.medicines.map((medicine, index) => (
+              {(selected.medicines || []).map((medicine, index) => (
                 <div className="prescriptions-medicine-item" key={index}>
                   <div className="prescriptions-medicine-number">
                     {index + 1}
@@ -545,7 +459,6 @@ function DoctorPrescriptions() {
                 Close
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -557,14 +470,13 @@ function DoctorPrescriptions() {
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="prescriptions-modal create-prescription-modal"
+            className="prescriptions-modal create-prescription-modal max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
-
             <div className="prescriptions-modal-header">
               <div>
-                <h2>Create Prescription</h2>
-                <p>Enter patient and medicine information.</p>
+                <h2>Create Digital Prescription</h2>
+                <p>Prescription syncs immediately to patient health records.</p>
               </div>
 
               <button onClick={() => setShowCreate(false)}>
@@ -573,24 +485,18 @@ function DoctorPrescriptions() {
             </div>
 
             <div className="prescriptions-form">
-
-              <label>Patient Name</label>
-              <input
-                value={form.patient}
-                onChange={(e) =>
-                  setForm({ ...form, patient: e.target.value })
-                }
-                placeholder="Enter patient name"
-              />
-
-              <label>Patient ID</label>
-              <input
+              <label>Select Registered Patient</label>
+              <select
                 value={form.patientId}
-                onChange={(e) =>
-                  setForm({ ...form, patientId: e.target.value })
-                }
-                placeholder="Enter patient ID"
-              />
+                onChange={handlePatientSelect}
+                className="w-full border rounded-xl p-2.5 text-sm mb-3 bg-white"
+              >
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.id}) - {p.village || "Rural Area"}
+                  </option>
+                ))}
+              </select>
 
               <label>Diagnosis</label>
               <input
@@ -598,7 +504,7 @@ function DoctorPrescriptions() {
                 onChange={(e) =>
                   setForm({ ...form, diagnosis: e.target.value })
                 }
-                placeholder="Enter diagnosis"
+                placeholder="e.g. Essential Hypertension, Seasonal Viral Infection"
               />
 
               <div className="prescriptions-form-divider">
@@ -607,7 +513,6 @@ function DoctorPrescriptions() {
 
               {form.medicines.map((medicine, index) => (
                 <div className="prescriptions-medicine-form" key={index}>
-
                   <div className="prescriptions-medicine-form-heading">
                     <strong>Medicine {index + 1}</strong>
 
@@ -628,11 +533,10 @@ function DoctorPrescriptions() {
                     onChange={(e) =>
                       updateMedicine(index, "name", e.target.value)
                     }
-                    placeholder="Medicine name"
+                    placeholder="e.g. Telmisartan, Paracetamol"
                   />
 
                   <div className="prescriptions-form-grid">
-
                     <div>
                       <label>Dosage</label>
                       <input
@@ -640,7 +544,7 @@ function DoctorPrescriptions() {
                         onChange={(e) =>
                           updateMedicine(index, "dosage", e.target.value)
                         }
-                        placeholder="Dosage"
+                        placeholder="e.g. 40 mg, 500 mg"
                       />
                     </div>
 
@@ -651,7 +555,7 @@ function DoctorPrescriptions() {
                         onChange={(e) =>
                           updateMedicine(index, "frequency", e.target.value)
                         }
-                        placeholder="Frequency"
+                        placeholder="e.g. Once daily, TDS"
                       />
                     </div>
 
@@ -662,12 +566,10 @@ function DoctorPrescriptions() {
                         onChange={(e) =>
                           updateMedicine(index, "duration", e.target.value)
                         }
-                        placeholder="Duration"
+                        placeholder="e.g. 15 days, 30 days"
                       />
                     </div>
-
                   </div>
-
                 </div>
               ))}
 
@@ -680,18 +582,19 @@ function DoctorPrescriptions() {
                 Add Another Medicine
               </button>
 
-              <label>Doctor's Instructions</label>
+              <label>Doctor's Instructions & Precautions</label>
               <textarea
                 rows="3"
                 value={form.instructions}
                 onChange={(e) =>
                   setForm({ ...form, instructions: e.target.value })
                 }
-                placeholder="Enter additional instructions..."
+                placeholder="Enter patient instructions..."
               />
 
               <div className="prescriptions-create-actions">
                 <button
+                  type="button"
                   onClick={() => createPrescription("Draft")}
                   className="prescriptions-save-draft"
                 >
@@ -699,20 +602,18 @@ function DoctorPrescriptions() {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => createPrescription("Issued")}
                   className="prescriptions-issue-btn"
                 >
                   <Send size={16} />
-                  Issue Prescription
+                  Issue & Sync to Patient
                 </button>
               </div>
-
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -11,7 +11,9 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
+import { useAarogya } from "../../context/AarogyaContext";
 
 const initialForm = {
   fullName: "",
@@ -45,8 +47,10 @@ const conditions = [
 ];
 
 export default function HealthWorkerRegisterPatient() {
+  const { registerPatient, setActivePatientId } = useAarogya();
   const [form, setForm] = useState(initialForm);
   const [success, setSuccess] = useState(false);
+  const [createdPatient, setCreatedPatient] = useState(null);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -101,6 +105,7 @@ export default function HealthWorkerRegisterPatient() {
     setForm(initialForm);
     setError("");
     setSuccess(false);
+    setCreatedPatient(null);
   };
 
   const handleSubmit = (e) => {
@@ -131,8 +136,10 @@ export default function HealthWorkerRegisterPatient() {
       return;
     }
 
-    // Demo submission: data is not saved to Firebase yet.
-    console.log("Patient Registration Data:", form);
+    // Call shared store
+    const created = registerPatient(form);
+    setCreatedPatient(created);
+    setActivePatientId(created.id);
 
     setSuccess(true);
     setError("");
@@ -151,8 +158,7 @@ export default function HealthWorkerRegisterPatient() {
           <h1>Register New Patient</h1>
 
           <p>
-            Add a new patient to your healthcare network and maintain their
-            basic health information.
+            Add a new rural patient to your healthcare network. Data syncs live across Doctor and Patient portals.
           </p>
         </div>
 
@@ -162,14 +168,15 @@ export default function HealthWorkerRegisterPatient() {
       </div>
 
       {/* Success Message */}
-      {success && (
-        <div className="hwr-success">
-          <CheckCircle2 size={21} />
-          <div>
-            <strong>Patient details submitted successfully!</strong>
-            <p>
-              This is a demo submission. Firebase storage will be connected
-              after configuring secure permissions.
+      {success && createdPatient && (
+        <div className="hwr-success flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+          <CheckCircle2 size={24} className="text-emerald-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <strong className="text-base block">
+              Patient Registered Successfully! ID: <span className="font-mono bg-emerald-100 px-2 py-0.5 rounded text-emerald-950 font-bold">{createdPatient.id}</span>
+            </strong>
+            <p className="text-xs text-emerald-800">
+              <strong>{createdPatient.name}</strong> from <strong>{createdPatient.village}</strong> is now registered. This profile is live and accessible in the Doctor Portal and Patient Dashboard.
             </p>
           </div>
         </div>

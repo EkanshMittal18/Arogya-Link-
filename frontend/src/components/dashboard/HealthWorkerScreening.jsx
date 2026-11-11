@@ -15,23 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
-
-const initialForm = {
-  patientId: "",
-  patientName: "",
-  screeningDate: new Date().toISOString().split("T")[0],
-  bloodPressure: "",
-  temperature: "",
-  heartRate: "",
-  oxygen: "",
-  weight: "",
-  height: "",
-  symptoms: [],
-  duration: "",
-  severity: "",
-  observations: "",
-  referralRequired: "",
-};
+import { useAarogya } from "../../context/AarogyaContext";
 
 const symptomsList = [
   "Fever",
@@ -49,9 +33,40 @@ const symptomsList = [
 ];
 
 export default function HealthWorkerScreening() {
-  const [form, setForm] = useState(initialForm);
+  const { patients, recordScreening } = useAarogya();
+
+  const [form, setForm] = useState({
+    patientId: patients[0]?.id || "AL-1024",
+    patientName: patients[0]?.name || "Rahul Sharma",
+    screeningDate: new Date().toISOString().split("T")[0],
+    bloodPressure: "120/80",
+    temperature: "98.6",
+    heartRate: "72",
+    oxygen: "98",
+    weight: "65",
+    height: "168",
+    symptoms: ["Headache"],
+    duration: "2 days",
+    severity: "Moderate",
+    observations: "Patient screened at home visit. Advised rest and fluids.",
+    referralRequired: "No",
+  });
+
   const [success, setSuccess] = useState(false);
+  const [screenedPatientName, setScreenedPatientName] = useState("");
   const [error, setError] = useState("");
+
+  const handlePatientSelect = (e) => {
+    const pId = e.target.value;
+    const p = patients.find((pat) => pat.id === pId);
+    if (p) {
+      setForm((prev) => ({
+        ...prev,
+        patientId: p.id,
+        patientName: p.name,
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +92,22 @@ export default function HealthWorkerScreening() {
   };
 
   const handleReset = () => {
-    setForm(initialForm);
+    setForm({
+      patientId: patients[0]?.id || "AL-1024",
+      patientName: patients[0]?.name || "Rahul Sharma",
+      screeningDate: new Date().toISOString().split("T")[0],
+      bloodPressure: "",
+      temperature: "",
+      heartRate: "",
+      oxygen: "",
+      weight: "",
+      height: "",
+      symptoms: [],
+      duration: "",
+      severity: "",
+      observations: "",
+      referralRequired: "",
+    });
     setError("");
     setSuccess(false);
   };
@@ -86,7 +116,7 @@ export default function HealthWorkerScreening() {
     e.preventDefault();
 
     if (!form.patientId.trim() || !form.patientName.trim()) {
-      setError("Please enter the patient ID and patient name.");
+      setError("Please select the patient.");
       return;
     }
 
@@ -110,12 +140,11 @@ export default function HealthWorkerScreening() {
       recordedAt: new Date().toISOString(),
     };
 
-    // Demo submission only. Firebase integration will be added later.
-    console.log("Patient Screening Data:", screeningData);
+    recordScreening(screeningData);
 
+    setScreenedPatientName(form.patientName);
     setSuccess(true);
     setError("");
-    setForm(initialForm);
   };
 
   return (
@@ -142,14 +171,12 @@ export default function HealthWorkerScreening() {
 
       {/* Success */}
       {success && (
-        <div className="hws-success">
-          <CheckCircle2 size={21} />
-
-          <div>
-            <strong>Screening submitted successfully!</strong>
-            <p>
-              Demo screening data has been processed locally. It has not been
-              saved to Firebase.
+        <div className="hws-success flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+          <CheckCircle2 size={24} className="text-emerald-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <strong className="text-base block">Vitals Screening Recorded & Synced!</strong>
+            <p className="text-xs text-emerald-800">
+              Vitals and symptoms for <strong>{screenedPatientName || form.patientName}</strong> ({form.patientId}) have been attached to their health profile. The doctor can now view these readings in their clinic dashboard, and the patient can view them in their health summary.
             </p>
           </div>
         </div>
@@ -174,38 +201,36 @@ export default function HealthWorkerScreening() {
 
             <div>
               <h2>Patient Details</h2>
-              <p>Identify the patient before starting screening.</p>
+              <p>Select a registered community patient to screen vitals.</p>
             </div>
           </div>
 
           <div className="hws-grid">
             <div className="hws-field">
-              <label>Patient ID <span>*</span></label>
-
-              <div className="hws-input-icon">
-                <Search size={17} />
-
-                <input
-                  type="text"
-                  name="patientId"
-                  placeholder="Enter patient ID"
-                  value={form.patientId}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              <label>Select Registered Patient <span>*</span></label>
+              <select
+                value={form.patientId}
+                onChange={handlePatientSelect}
+                className="w-full border rounded-xl p-2.5 text-sm bg-white"
+              >
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.id}) - {p.village || "Rural"}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="hws-field">
-              <label>Patient Name <span>*</span></label>
+              <label>Patient Name</label>
 
               <input
                 type="text"
                 name="patientName"
-                placeholder="Enter patient name"
+                placeholder="Patient Name"
                 value={form.patientName}
-                onChange={handleChange}
-                required
+                readOnly
+                className="bg-slate-50 cursor-not-allowed"
               />
             </div>
 

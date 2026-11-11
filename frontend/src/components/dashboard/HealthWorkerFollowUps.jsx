@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAarogya } from "../../context/AarogyaContext";
 import {
   CalendarDays,
   Clock,
@@ -16,94 +17,34 @@ import {
   MessageCircle,
 } from "lucide-react";
 
-const initialFollowUps = [
-  {
-    id: 1,
-    patient: "Rahul Sharma",
-    patientId: "PT-1001",
-    phone: "9876543210",
-    date: "2026-11-02",
-    time: "10:00",
-    purpose: "Blood Pressure Monitoring",
-    notes: "Check BP after prescribed treatment.",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    patient: "Priya Singh",
-    patientId: "PT-1002",
-    phone: "9876543211",
-    date: "2026-11-03",
-    time: "11:30",
-    purpose: "Post Consultation Follow-up",
-    notes: "Review patient's recovery progress.",
-    status: "Completed",
-  },
-  {
-    id: 3,
-    patient: "Aman Gupta",
-    patientId: "PT-1003",
-    phone: "9876543212",
-    date: "2026-11-04",
-    time: "09:30",
-    purpose: "Diabetes Monitoring",
-    notes: "Review glucose monitoring record.",
-    status: "Pending",
-  },
-  {
-    id: 4,
-    patient: "Sneha Das",
-    patientId: "PT-1004",
-    phone: "9876543213",
-    date: "2026-10-28",
-    time: "14:00",
-    purpose: "General Health Checkup",
-    notes: "Routine health progress review.",
-    status: "Missed",
-  },
-];
-
-const emptyForm = {
-  patient: "",
-  patientId: "",
-  phone: "",
-  date: "",
-  time: "",
-  purpose: "",
-  notes: "",
-};
-
 export default function HealthWorkerFollowUps() {
-  const [followUps, setFollowUps] = useState(initialFollowUps);
+  const { followups, patients, addFollowup, updateFollowupStatus } = useAarogya();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({
+    patientId: patients[0]?.id || "AL-1024",
+    patient: patients[0]?.name || "Rahul Sharma",
+    phone: patients[0]?.phone || "9876543210",
+    date: new Date().toISOString().split("T")[0],
+    time: "10:00",
+    purpose: "Routine Health & BP Check",
+    notes: "Review patient recovery and medications.",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const total = followUps.length;
+  const total = followups.length;
+  const pending = followups.filter((item) => item.status === "Pending" || item.status === "Upcoming").length;
+  const completed = followups.filter((item) => item.status === "Completed").length;
 
-  const pending = followUps.filter(
-    (item) => item.status === "Pending"
-  ).length;
-
-  const completed = followUps.filter(
-    (item) => item.status === "Completed"
-  ).length;
-
-  const missed = followUps.filter(
-    (item) => item.status === "Missed"
-  ).length;
-
-  const filteredFollowUps = followUps.filter((item) => {
+  const filteredFollowUps = followups.filter((item) => {
     const matchesSearch =
-      item.patient.toLowerCase().includes(search.toLowerCase()) ||
-      item.patientId.toLowerCase().includes(search.toLowerCase()) ||
-      item.purpose.toLowerCase().includes(search.toLowerCase());
+      (item.patient || "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.patientId || "").toLowerCase().includes(search.toLowerCase()) ||
+      (item.purpose || item.title || "").toLowerCase().includes(search.toLowerCase());
 
-    const matchesFilter =
-      filter === "All" || item.status === filter;
+    const matchesFilter = filter === "All" || item.status === filter;
 
     return matchesSearch && matchesFilter;
   });
@@ -115,56 +56,43 @@ export default function HealthWorkerFollowUps() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
+    setForm((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (
-      !form.patient.trim() ||
-      !form.patientId.trim() ||
-      !form.date ||
-      !form.time ||
-      !form.purpose.trim()
-    ) {
-      setError("Please fill in all required fields.");
+    const selPatient = patients.find((p) => p.id === form.patientId);
+    if (!selPatient) {
+      setError("Please select a registered patient.");
       return;
     }
 
-    if (form.phone && !/^[0-9]{10}$/.test(form.phone)) {
-      setError("Please enter a valid 10-digit phone number.");
+    if (!form.date || !form.purpose.trim()) {
+      setError("Please complete all required fields.");
       return;
     }
 
-    const newFollowUp = {
-      ...form,
-      id: Date.now(),
-      status: "Pending",
-    };
+    addFollowup({
+      patientId: selPatient.id,
+      patient: selPatient.name,
+      phone: selPatient.phone,
+      date: form.date,
+      time: form.time || "10:00 AM",
+      purpose: form.purpose,
+      title: form.purpose,
+      notes: form.notes,
+      description: form.notes || form.purpose,
+      status: "Upcoming",
+    });
 
-    setFollowUps((prev) => [newFollowUp, ...prev]);
-
-    setForm(emptyForm);
     setShowModal(false);
     setError("");
-
-    showMessage("New follow-up scheduled successfully!");
+    showMessage("New follow-up scheduled and synced to Patient portal!");
   };
 
   const updateStatus = (id, status) => {
-    setFollowUps((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-
+    updateFollowupStatus(id, status);
     showMessage(`Follow-up marked as ${status}.`);
   };
 

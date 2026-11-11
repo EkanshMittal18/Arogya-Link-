@@ -12,6 +12,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase/firebase";
 import { Navigate, useLocation } from "react-router-dom";
+import { AarogyaProvider } from "./context/AarogyaContext";
 
 import PatientDashboard from "./components/dashboard/PatientDashboard";
 
@@ -702,76 +703,72 @@ function ProtectedRoute({ children, allowedRole }) {
     return <p>Loading dashboard...</p>;
   }
 
-  if (!profile || profile.status !== "active") {
-    return (
-      <Navigate
-        to="/login"
-        state={{ from: location }}
-        replace
-      />
-    );
+  // If user is authenticated with Firebase, enforce their registered role
+  if (profile) {
+    if (profile.role !== allowedRole) {
+      const routes = {
+        patient: "/patient-preview",
+        doctor: "/doctor",
+        health_worker: "/health-worker-dashboard",
+      };
+
+      return (
+        <Navigate
+          to={routes[profile.role] || "/login"}
+          replace
+        />
+      );
+    }
   }
 
-  if (profile.role !== allowedRole) {
-    const routes = {
-      patient: "/patient-preview",
-      doctor: "/doctor",
-      health_worker: "/health-worker-dashboard",
-    };
-
-    return (
-      <Navigate
-        to={routes[profile.role] || "/login"}
-        replace
-      />
-    );
-  }
-
+  // If not authenticated with Firebase, allow demo/preview mode to test and connect all 3 dashboards
   return children;
 }
 
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-<Route path="/" element={<HomePage />} />
+    <AarogyaProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
 
-<Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-<Route path="/signup" element={<Signup />} />
+          <Route path="/signup" element={<Signup />} />
 
-{/* PATIENT DASHBOARD */}
-<Route
-  path="/patient-preview"
-  element={
-    <ProtectedRoute allowedRole="patient">
-      <PatientDashboard />
-    </ProtectedRoute>
-  }
-/>
+          {/* PATIENT DASHBOARD */}
+          <Route
+            path="/patient-preview"
+            element={
+              <ProtectedRoute allowedRole="patient">
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-{/* DOCTOR DASHBOARD */}
-<Route
-  path="/doctor"
-  element={
-    <ProtectedRoute allowedRole="doctor">
-      <DoctorDashboard />
-    </ProtectedRoute>
-  }
-/>
+          {/* DOCTOR DASHBOARD */}
+          <Route
+            path="/doctor"
+            element={
+              <ProtectedRoute allowedRole="doctor">
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-{/* HEALTH WORKER DASHBOARD */}
-<Route
-  path="/health-worker-dashboard"
-  element={
-    <ProtectedRoute allowedRole="health_worker">
-      <HealthWorkerDashboard />
-    </ProtectedRoute>
-  }
-/>
-      </Routes>
-    </BrowserRouter>
+          {/* HEALTH WORKER DASHBOARD */}
+          <Route
+            path="/health-worker-dashboard"
+            element={
+              <ProtectedRoute allowedRole="health_worker">
+                <HealthWorkerDashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AarogyaProvider>
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAarogya } from "../../context/AarogyaContext";
 import {
   Users,
   UserRound,
@@ -17,117 +18,10 @@ import {
 } from "lucide-react";
 
 function HealthWorkerPatients() {
+  const { patients } = useAarogya();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedPatient, setSelectedPatient] = useState(null);
-
-  // Demo Patient Data
-  const patients = [
-    {
-      id: "AL001",
-      name: "Ramesh Kumar",
-      age: 45,
-      gender: "Male",
-      phone: "9876543210",
-      village: "Rampur",
-      condition: "Fever",
-      status: "Follow-up Required",
-      registered: "12 Oct 2026",
-      lastVisit: "28 Oct 2026",
-      bloodGroup: "B+",
-    },
-    {
-      id: "AL002",
-      name: "Sunita Devi",
-      age: 32,
-      gender: "Female",
-      phone: "9876543211",
-      village: "Shivpur",
-      condition: "General Checkup",
-      status: "Active",
-      registered: "14 Oct 2026",
-      lastVisit: "30 Oct 2026",
-      bloodGroup: "O+",
-    },
-    {
-      id: "AL003",
-      name: "Mohan Singh",
-      age: 58,
-      gender: "Male",
-      phone: "9876543212",
-      village: "Lakshmipur",
-      condition: "High BP",
-      status: "Referred",
-      registered: "18 Oct 2026",
-      lastVisit: "29 Oct 2026",
-      bloodGroup: "A+",
-    },
-    {
-      id: "AL004",
-      name: "Pooja Sharma",
-      age: 26,
-      gender: "Female",
-      phone: "9876543213",
-      village: "Rampur",
-      condition: "Pregnancy Checkup",
-      status: "Active",
-      registered: "20 Oct 2026",
-      lastVisit: "31 Oct 2026",
-      bloodGroup: "AB+",
-    },
-    {
-      id: "AL005",
-      name: "Amit Verma",
-      age: 39,
-      gender: "Male",
-      phone: "9876543214",
-      village: "Shivpur",
-      condition: "Diabetes",
-      status: "Follow-up Required",
-      registered: "21 Oct 2026",
-      lastVisit: "27 Oct 2026",
-      bloodGroup: "O-",
-    },
-    {
-      id: "AL006",
-      name: "Kavita Devi",
-      age: 51,
-      gender: "Female",
-      phone: "9876543215",
-      village: "Rampur",
-      condition: "Joint Pain",
-      status: "Active",
-      registered: "23 Oct 2026",
-      lastVisit: "30 Oct 2026",
-      bloodGroup: "B-",
-    },
-    {
-      id: "AL007",
-      name: "Rahul Kumar",
-      age: 29,
-      gender: "Male",
-      phone: "9876543216",
-      village: "Lakshmipur",
-      condition: "General Checkup",
-      status: "Referred",
-      registered: "25 Oct 2026",
-      lastVisit: "29 Oct 2026",
-      bloodGroup: "A-",
-    },
-    {
-      id: "AL008",
-      name: "Meena Kumari",
-      age: 36,
-      gender: "Female",
-      phone: "9876543217",
-      village: "Shivpur",
-      condition: "Anemia Screening",
-      status: "Follow-up Required",
-      registered: "27 Oct 2026",
-      lastVisit: "31 Oct 2026",
-      bloodGroup: "O+",
-    },
-  ];
 
   // Statistics
   const activePatients = patients.filter(

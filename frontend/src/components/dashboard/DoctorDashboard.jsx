@@ -18,6 +18,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
+import DashboardSwitcher from "../common/DashboardSwitcher";
+import { useAarogya } from "../../context/AarogyaContext";
 
 import DoctorOverview from "./DoctorOverview";
 import DoctorPatients from "./DoctorPatients";
@@ -33,9 +35,12 @@ import "./DoctorDashboard.css";
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+  const { notifications } = useAarogya();
 
   const [activeSection, setActiveSection] = useState("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const unreadCount = notifications.filter((n) => n.role === "doctor" && !n.read).length;
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard },
@@ -59,7 +64,9 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <div className="doctor-dashboard">
+    <div className="flex flex-col min-h-screen">
+      <DashboardSwitcher currentRole="doctor" />
+      <div className="doctor-dashboard flex-1">
 
       {/* Sidebar */}
       <aside className={`doctor-sidebar ${sidebarOpen ? "" : "collapsed"}`}>
@@ -125,7 +132,7 @@ const DoctorDashboard = () => {
 
             <div>
               <h2>{activeSection}</h2>
-              <p>Welcome to your Doctor Dashboard</p>
+              <p>Welcome to your Doctor Dashboard • Aarogya Link</p>
             </div>
           </div>
 
@@ -133,20 +140,27 @@ const DoctorDashboard = () => {
 
             <div className="doctor-search">
               <Search size={18} />
-              <input type="text" placeholder="Search anything..." />
+              <input type="text" placeholder="Search patients, records..." />
             </div>
 
-            <button className="doctor-notification">
+            <button
+              className="doctor-notification relative"
+              onClick={() => setActiveSection("Referrals")}
+              title="Incoming Referrals & Alerts"
+            >
               <Bell size={21} />
-              <span></span>
+              {unreadCount > 0 && <span className="notification-dot"></span>}
             </button>
 
-            <div className="doctor-profile">
+            <div
+              className="doctor-profile cursor-pointer"
+              onClick={() => setActiveSection("My Profile")}
+            >
               <div className="doctor-avatar">D</div>
 
               <div>
-                <h4>Doctor</h4>
-                <span>Medical Professional</span>
+                <h4>Dr. Amit Sharma</h4>
+                <span>Chief Medical Officer</span>
               </div>
             </div>
 
@@ -156,26 +170,21 @@ const DoctorDashboard = () => {
         {/* Section Content */}
         <section className="doctor-content">
 
-          {activeSection === "Overview" && <DoctorOverview />}
+          {activeSection === "Overview" && <DoctorOverview onNavigate={setActiveSection} />}
           {activeSection === "My Patients" && <DoctorPatients />}
           {activeSection === "Appointments" && <DoctorAppointments />}
-            {activeSection === "Consultations" && <DoctorConsultations />}
-            {activeSection === "Prescriptions" && <DoctorPrescriptions />}
-            {activeSection === "Medical Records" && <DoctorMedicalRecords />}
-            {activeSection === "Referrals" && <DoctorReferrals />}
-            {activeSection === "My Profile" && <DoctorProfile />}
-            {activeSection === "Settings" && <DoctorSettings />}
-          {activeSection !== "Overview" && activeSection !== "My Patients" && activeSection !== "Appointments" && activeSection !== "Consultations" && activeSection !== "Prescriptions" && (
-            <div className="doctor-placeholder">
-              <h2>{activeSection}</h2>
-              <p>This section will be developed step by step.</p>
-            </div>
-          )}
+          {activeSection === "Consultations" && <DoctorConsultations />}
+          {activeSection === "Prescriptions" && <DoctorPrescriptions />}
+          {activeSection === "Medical Records" && <DoctorMedicalRecords />}
+          {activeSection === "Referrals" && <DoctorReferrals />}
+          {activeSection === "My Profile" && <DoctorProfile />}
+          {activeSection === "Settings" && <DoctorSettings />}
 
         </section>
 
       </main>
 
+    </div>
     </div>
   );
 };

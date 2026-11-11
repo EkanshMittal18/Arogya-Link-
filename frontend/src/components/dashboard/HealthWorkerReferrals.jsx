@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAarogya } from "../../context/AarogyaContext";
 import {
   ClipboardList,
   Plus,
@@ -18,75 +19,22 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
-const initialReferrals = [
-  {
-    id: 1,
-    patient: "Rahul Sharma",
-    patientId: "PT-1001",
-    hospital: "District Civil Hospital",
-    doctor: "Dr. Amit Kumar",
-    department: "General Medicine",
-    date: "2026-11-02",
-    priority: "High",
-    reason: "Persistent fever and weakness",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    patient: "Priya Singh",
-    patientId: "PT-1002",
-    hospital: "Community Health Center",
-    doctor: "Dr. Neha Verma",
-    department: "Gynecology",
-    date: "2026-11-03",
-    priority: "Medium",
-    reason: "Routine medical consultation",
-    status: "Accepted",
-  },
-  {
-    id: 3,
-    patient: "Aman Gupta",
-    patientId: "PT-1003",
-    hospital: "City Care Hospital",
-    doctor: "Dr. Rajesh Sharma",
-    department: "Cardiology",
-    date: "2026-10-29",
-    priority: "High",
-    reason: "Blood pressure evaluation",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    patient: "Sneha Das",
-    patientId: "PT-1004",
-    hospital: "District Civil Hospital",
-    doctor: "Dr. Amit Kumar",
-    department: "General Medicine",
-    date: "2026-10-28",
-    priority: "Low",
-    reason: "General health checkup",
-    status: "Cancelled",
-  },
-];
-
-const emptyForm = {
-  patient: "",
-  patientId: "",
-  hospital: "",
-  doctor: "",
-  department: "",
-  date: "",
-  priority: "Medium",
-  reason: "",
-  notes: "",
-};
-
 export default function HealthWorkerReferrals() {
-  const [referrals, setReferrals] = useState(initialReferrals);
+  const { referrals, patients, addReferral, updateReferralStatus } = useAarogya();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({
+    patientId: (patients[0] && patients[0].id) || "AL-1024",
+    patient: (patients[0] && patients[0].name) || "Rahul Sharma",
+    hospital: "District Civil Hospital",
+    doctor: "Dr. Amit Sharma",
+    department: "General Medicine",
+    date: new Date().toISOString().split("T")[0],
+    priority: "High",
+    reason: "",
+    notes: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -121,38 +69,39 @@ export default function HealthWorkerReferrals() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (
-      !form.patient.trim() ||
-      !form.patientId.trim() ||
-      !form.hospital.trim() ||
-      !form.doctor.trim() ||
-      !form.date ||
-      !form.reason.trim()
-    ) {
+    const selPatient = patients.find((p) => p.id === form.patientId);
+    if (!selPatient) {
+      setError("Please select a registered patient.");
+      return;
+    }
+
+    if (!form.hospital.trim() || !form.doctor.trim() || !form.date || !form.reason.trim()) {
       setError("Please complete all required fields.");
       return;
     }
 
-    const newReferral = {
-      ...form,
-      id: Date.now(),
+    addReferral({
+      patientId: selPatient.id,
+      patient: selPatient.name,
+      hospital: form.hospital,
+      doctor: form.doctor,
+      specialist: form.doctor,
+      department: form.department || "General Medicine",
+      date: form.date,
+      priority: form.priority,
+      reason: form.reason,
+      notes: form.notes,
+      referredBy: "Community Health Worker (ASHA)",
       status: "Pending",
-    };
+    });
 
-    setReferrals((prev) => [newReferral, ...prev]);
-    setForm(emptyForm);
     setShowModal(false);
     setError("");
-    showMessage("New referral created successfully!");
+    showMessage("New referral created and sent to Doctor portal!");
   };
 
   const updateStatus = (id, status) => {
-    setReferrals((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
-    );
-
+    updateReferralStatus(id, status);
     showMessage(`Referral status updated to ${status}.`);
   };
 
@@ -484,33 +433,35 @@ export default function HealthWorkerReferrals() {
 
               <div className="hwrf-modal-grid">
 
-                <div className="hwrf-field">
-                  <label>Patient Name *</label>
-                  <input
-                    name="patient"
-                    placeholder="Enter patient name"
-                    value={form.patient}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="hwrf-field">
-                  <label>Patient ID *</label>
-                  <input
+                <div className="hwrf-field hwrf-full">
+                  <label>Select Community Patient *</label>
+                  <select
                     name="patientId"
-                    placeholder="e.g. PT-1006"
                     value={form.patientId}
-                    onChange={handleChange}
-                    required
-                  />
+                    onChange={(e) => {
+                      const pId = e.target.value;
+                      const pat = patients.find((p) => p.id === pId);
+                      setForm((prev) => ({
+                        ...prev,
+                        patientId: pId,
+                        patient: pat?.name || "",
+                      }));
+                    }}
+                    className="w-full border rounded-xl p-2.5 text-sm bg-white"
+                  >
+                    {patients.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.id}) - {p.village || "Rural"}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="hwrf-field">
                   <label>Hospital / Healthcare Facility *</label>
                   <input
                     name="hospital"
-                    placeholder="Enter hospital name"
+                    placeholder="e.g. District Civil Hospital"
                     value={form.hospital}
                     onChange={handleChange}
                     required
@@ -518,14 +469,26 @@ export default function HealthWorkerReferrals() {
                 </div>
 
                 <div className="hwrf-field">
-                  <label>Doctor Name *</label>
-                  <input
+                  <label>Consulting Doctor / Specialist *</label>
+                  <select
                     name="doctor"
-                    placeholder="Enter doctor name"
                     value={form.doctor}
-                    onChange={handleChange}
-                    required
-                  />
+                    onChange={(e) => {
+                      const doc = e.target.value;
+                      const dep =
+                        doc === "Dr. Rajesh Sharma"
+                          ? "Cardiology"
+                          : doc === "Dr. Neha Verma"
+                          ? "General Medicine"
+                          : "General Medicine";
+                      setForm((prev) => ({ ...prev, doctor: doc, department: dep }));
+                    }}
+                    className="w-full border rounded-xl p-2.5 text-sm bg-white"
+                  >
+                    <option value="Dr. Amit Sharma">Dr. Amit Sharma (General Physician)</option>
+                    <option value="Dr. Neha Verma">Dr. Neha Verma (General Medicine)</option>
+                    <option value="Dr. Rajesh Sharma">Dr. Rajesh Sharma (Cardiologist)</option>
+                  </select>
                 </div>
 
                 <div className="hwrf-field">

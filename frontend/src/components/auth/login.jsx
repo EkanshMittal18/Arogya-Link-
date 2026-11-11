@@ -218,6 +218,63 @@ function Login() {
 
       <div className="auth-divider">
         <span />
+        or quick demo access
+        <span />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", margin: "16px 0" }}>
+        <button
+          type="button"
+          onClick={() => navigate("/patient-preview")}
+          style={{
+            padding: "9px 6px",
+            background: "#ecfdf5",
+            color: "#065f46",
+            border: "1px solid #a7f3d0",
+            borderRadius: "8px",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          🟢 Patient
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/doctor")}
+          style={{
+            padding: "9px 6px",
+            background: "#f0fdfa",
+            color: "#115e59",
+            border: "1px solid #99f6e4",
+            borderRadius: "8px",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          🩺 Doctor
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/health-worker-dashboard")}
+          style={{
+            padding: "9px 6px",
+            background: "#eff6ff",
+            color: "#1e40af",
+            border: "1px solid #bfdbfe",
+            borderRadius: "8px",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          🏥 Health Worker
+        </button>
+      </div>
+
+      <div className="auth-divider">
+        <span />
         or continue with
         <span />
       </div>
