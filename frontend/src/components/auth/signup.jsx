@@ -15,12 +15,24 @@ import {
 } from "lucide-react";
 
 import { Link, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 import AuthLayout from "./AuthLayout";
 import { auth, db } from "../../firebase/firebase";
 import "./Auth.css";
+
+const API_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const roles = [
   { id: "patient", label: "Patient", icon: Users },
@@ -51,49 +63,84 @@ function Signup() {
     setLoading(true);
 
     try {
-      // Create Firebase account
       const cleanName = name.trim();
-const cleanEmail = email.trim();
-const cleanPhone = phone.trim();
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPhone = phone.trim();
 
-const userCredential = await createUserWithEmailAndPassword(
-  auth,
-  cleanEmail,
-  password
-);
+      // 1. Create Firebase account
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        cleanEmail,
+        password
+      );
 
       const user = userCredential.user;
 
-      // Save user's display name
+      // 2. Save display name
       await updateProfile(user, {
         displayName: cleanName,
       });
 
-      // Save user profile and role in Firestore
-await setDoc(doc(db, "users", user.uid), {
-  uid: user.uid,
-  name: cleanName,
-  email: cleanEmail,
-  phone: cleanPhone,
-  role: selectedRole,
-  createdAt: serverTimestamp(),
-  status: selectedRole === "doctor" ? "pending" : "active",
-});
+      // 3. Save user profile in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        role: selectedRole,
+        createdAt: serverTimestamp(),
+        status: selectedRole === "doctor" ? "pending" : "active",
+      });
 
       setMessage("Account created successfully!");
 
       console.log("Registered User:", {
         uid: user.uid,
-        name,
-        email,
-        phone,
+        name: cleanName,
+        email: cleanEmail,
         role: selectedRole,
       });
 
-      // Redirect after successful signup
+      // 4. Get Firebase ID token
+     // 4. Get Firebase ID token and send welcome email
+try {
+  console.log("Signup successful!");
+  console.log("Calling welcome email API...");
+
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(`${API_URL}/api/email/welcome`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      name: cleanName,
+      role: selectedRole,
+    }),
+  });
+
+  console.log("API Status:", response.status);
+
+  const result = await response.json();
+
+  console.log("Welcome Email Result:", result);
+
+  if (response.ok && result.success) {
+    console.log("Welcome email sent successfully!");
+  } else {
+    console.warn("Welcome email failed:", result.message);
+  }
+
+} catch (emailError) {
+  console.error("Welcome Email Error:", emailError);
+}
+
+      // 6. Redirect after successful signup
       setTimeout(() => {
         navigate("/login");
-      }, 1500);
+      }, 2000);
 
     } catch (err) {
       console.error("Signup Error:", err);
@@ -116,8 +163,9 @@ await setDoc(doc(db, "users", user.uid), {
           break;
 
         default:
-          setError(err.message);
+          setError(err.message || "Something went wrong.");
       }
+
     } finally {
       setLoading(false);
     }
@@ -131,6 +179,7 @@ await setDoc(doc(db, "users", user.uid), {
       </div>
 
       <form className="auth-form signup-form" onSubmit={handleSubmit}>
+
         <div className="auth-role-section">
           <label className="auth-role-title">I am a</label>
 
@@ -149,6 +198,7 @@ await setDoc(doc(db, "users", user.uid), {
                 >
                   <Icon size={25} />
                   <span>{role.label}</span>
+
                   <span className="auth-role-radio">
                     {isSelected && <span />}
                   </span>
@@ -160,8 +210,10 @@ await setDoc(doc(db, "users", user.uid), {
 
         <div className="auth-field">
           <label htmlFor="signup-name">Full Name</label>
+
           <div className="auth-input-wrap">
             <User size={19} />
+
             <input
               id="signup-name"
               type="text"
@@ -175,8 +227,10 @@ await setDoc(doc(db, "users", user.uid), {
 
         <div className="auth-field">
           <label htmlFor="signup-email">Email Address</label>
+
           <div className="auth-input-wrap">
             <Mail size={19} />
+
             <input
               id="signup-email"
               type="email"
@@ -190,8 +244,10 @@ await setDoc(doc(db, "users", user.uid), {
 
         <div className="auth-field">
           <label htmlFor="signup-phone">Phone Number</label>
+
           <div className="auth-input-wrap">
             <Phone size={19} />
+
             <input
               id="signup-phone"
               type="tel"
@@ -205,8 +261,10 @@ await setDoc(doc(db, "users", user.uid), {
 
         <div className="auth-field">
           <label htmlFor="signup-password">Password</label>
+
           <div className="auth-input-wrap">
             <Lock size={19} />
+
             <input
               id="signup-password"
               type={showPassword ? "text" : "password"}

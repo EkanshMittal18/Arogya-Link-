@@ -36,6 +36,8 @@ import DesignedForEveryone from "./components/sections/DesignedForEveryone";
 import TrustAccessibility from "./components/sections/TrustAccessibility";
 import Footer from "./components/sections/Footer";
 import DoctorDashboard from "./components/dashboard/DoctorDashboard";
+import PharmacyDashboard from "./components/dashboard/PharmacyDashboard";
+import HospitalAdminDashboard from "./components/dashboard/HospitalAdminDashboard";
 
 import {
 
@@ -710,6 +712,9 @@ function ProtectedRoute({ children, allowedRole }) {
         patient: "/patient-preview",
         doctor: "/doctor",
         health_worker: "/health-worker-dashboard",
+        pharmacy: "/pharmacy",
+        hospital_admin: "/hospital-admin",
+
       };
 
       return (
@@ -766,6 +771,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* PHARMACY DASHBOARD */}
+<Route
+  path="/pharmacy"
+  element={
+    <ProtectedRoute allowedRole="pharmacy">
+      <PharmacyDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+{/* HOSPITAL ADMIN DASHBOARD */}
+<Route
+  path="/hospital-admin"
+  element={
+    <ProtectedRoute allowedRole="hospital_admin">
+      <HospitalAdminDashboard />
+    </ProtectedRoute>
+  }
+/>
         </Routes>
       </BrowserRouter>
     </AarogyaProvider>
